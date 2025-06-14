@@ -1,12 +1,16 @@
 name: Build, Test, Deploy
 
 on:
-  push:
-    branches:
-    - main
-  pull_request:
-    branches:
-    - main
+  # push:
+  #   branches:
+  #   - main
+  # pull_request:
+  #   branches:
+  #   - main
+  workflow_run:
+    workflows: [Terraform]
+    types:
+      - completed
 
 jobs:
   build:
