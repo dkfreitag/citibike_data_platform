@@ -85,8 +85,8 @@ jobs:
     # Generates an execution plan for Terraform
     - name: Terraform Plan
       env:
-        TF_VAR_aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        TF_VAR_aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        TF_VAR_aws_access_key: "${{ secrets.AWS_ACCESS_KEY_ID }}"
+        TF_VAR_aws_secret_key: "${{ secrets.AWS_SECRET_ACCESS_KEY }}"
       run: terraform plan -input=false
 
       # On push to "main", build or change infrastructure according to Terraform configuration files
