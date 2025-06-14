@@ -54,8 +54,8 @@ jobs:
       
       - name: Sync to S3
         run: |
-          aws s3 sync ./kafka_broker s3://citibike-data-platform-project-bucket/kafka_broker
-          aws s3 sync ./kafka_producer s3://citibike-data-platform-project-bucket/kafka_producer
+          aws s3 sync --delete ./kafka_broker s3://citibike-data-platform-project-bucket/kafka_broker
+          aws s3 sync --delete ./kafka_producer s3://citibike-data-platform-project-bucket/kafka_producer
         
       - name: Deploy Kafka Broker to EC2
         env:
@@ -73,7 +73,7 @@ jobs:
           rm -rf kafka_broker
           mkdir kafka_broker
           cd kafka_broker
-          aws s3 sync s3://citibike-data-platform-project-bucket/kafka_broker/ .
+          aws s3 sync --delete s3://citibike-data-platform-project-bucket/kafka_broker/ .
           sudo docker compose down
           sudo docker compose up -d --force-recreate
           '
@@ -94,8 +94,8 @@ jobs:
           rm -rf producer_deploy
           mkdir producer_deploy
           cd producer_deploy
-          aws s3 sync s3://citibike-data-platform-project-bucket/kafka_producer/ .
+          aws s3 sync --delete s3://citibike-data-platform-project-bucket/kafka_producer/ .
           sudo docker compose down
           sudo docker compose build
-          sudo docker compose up -d --force-recreate
+          sudo docker compose up -d --force-recreated
           '
