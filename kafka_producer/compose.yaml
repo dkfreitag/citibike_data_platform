@@ -3,3 +3,4 @@ services:
     build: .
     ports:
       - "9092:9092"
+    restart: on-failure

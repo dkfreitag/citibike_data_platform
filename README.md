@@ -1,15 +1,25 @@
 # Citibike Data Platform
 
-Kafka Producer
-Kafka Broker
+### Data Ingestion:
+Kafka Producer<br>
+Kafka Broker<br>
 Kafka Consumer
 
-Path A:
-S3
-Spark batch processing
+### Lambda Architecture
 
-Path B:
+#### Batch pipeline:
+S3<br>
+Spark batch processing<br>
+Iceberg data lake
+
+#### Streaming pipeline:
 Flink stream processing
+
+### Serving Layer
+
+API endpoint - queries data<br>
+Display stream processing stats<br>
+Display batch processing stats
 
 ---
 
