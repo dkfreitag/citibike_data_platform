@@ -5,6 +5,7 @@ import json
 import urllib3
 from datetime import datetime
 from datetime import timezone
+import time
 
 def fetch_station_status():
     http = urllib3.PoolManager()
@@ -81,12 +82,14 @@ def main():
 
     for record in station_status_records:
         try:
-            producer.send(topicname, value=record)
+            future = producer.send(topicname, value=record)
             producer.flush()
+            print(future.get(timeout=10))
 
         except Exception as e:
             print(e.with_traceback())
 
 if __name__ == '__main__':
-    main()
-    print('Done!')
+    while True:
+        main()
+        time.sleep(10)
