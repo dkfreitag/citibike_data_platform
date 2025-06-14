@@ -65,6 +65,6 @@ jobs:
           sudo -s
           cd kafka_deploy
           docker compose down
-          aws s3 sync s3://citibike-data-platform-project-bucket/kafka_deploy/ kafka_deploy/
+          aws s3 sync s3://citibike-data-platform-project-bucket/kafka_deploy/ .
           docker compose up -d
           '
