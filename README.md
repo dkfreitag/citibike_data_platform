@@ -24,10 +24,8 @@ Display batch processing stats
 ---
 
 ### EC2 Setup
-1. Create VPC - put broker and producer EC2's on the same VPC
-1. Create broker EC2
-2. Create producer EC2
-3. Set up secrets in GitHub so CI/CD can SSH into the EC2's
+1. Configure secrets in GitHub Actions
+2. Configure variables in Hashicorp Cloud account
 
 ---
 
