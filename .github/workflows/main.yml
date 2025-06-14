@@ -41,12 +41,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Sync files to S3
+      - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4.1.0
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: 'us-east-1'
+      
+      - name: Sync to S3
         run: |
           aws s3 sync ./kafka_deploy s3://citibike-data-platform-project-bucket/kafka_deploy
           aws s3 sync ./ingestion s3://citibike-data-platform-project-bucket/ingestion
