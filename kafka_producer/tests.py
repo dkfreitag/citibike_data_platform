@@ -149,8 +149,7 @@ class TestProducerMethods(unittest.TestCase):
 
         self.assertEqual(
             ec2_producer.process_station_status(station_status_object),
-            'asdf'
-            #station_status_records,
+            station_status_records,
         )
 
 
