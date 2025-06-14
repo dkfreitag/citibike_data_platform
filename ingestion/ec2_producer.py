@@ -90,6 +90,7 @@ def main():
             print(e.with_traceback())
 
 if __name__ == '__main__':
+    # every 60 seconds
     while True:
         main()
-        time.sleep(10)
+        time.sleep(60)

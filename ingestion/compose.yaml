@@ -1,0 +1,5 @@
+services:
+  producer:
+    build: .
+    ports:
+      - "9092:9092"
