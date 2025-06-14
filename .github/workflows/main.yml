@@ -80,6 +80,8 @@ jobs:
           aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws configure set default.region us-east-1
+          rm -rf producer_deploy
+          mkdir producer_deploy
           cd producer_deploy
           aws s3 sync s3://citibike-data-platform-project-bucket/ingestion/ .
           sudo docker compose build

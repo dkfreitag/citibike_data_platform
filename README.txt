@@ -6,10 +6,11 @@ Install docker
 Run Kafka in docker - must update ip address in docker compose
 
 
-# In the current working directory
-pip install kafka_python --target .
 
-# Then, zip the file
+sudo snap install aws-cli --classic
+sudo snap install docker
+
+
 
 
 
