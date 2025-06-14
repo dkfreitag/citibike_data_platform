@@ -63,10 +63,8 @@ jobs:
           echo "$PRIVATE_KEY" > github-ec2.pem && chmod 600 github-ec2.pem
           ssh -o StrictHostKeyChecking=no -i github-ec2.pem ${USER}@${HOST} '
           sudo -s
-          docker compose down
-          rm -rf kafka_deploy
-          mkdir kafka_deploy
           cd kafka_deploy
-          aws s3 cp s3://citibike-data-platform-project-bucket/kafka_deploy/docker-compose.yml kafka_deploy/docker-compose.yml
+          docker compose down
+          aws s3 sync s3://citibike-data-platform-project-bucket/kafka_deploy/ kafka_deploy/
           docker compose up -d
           '
