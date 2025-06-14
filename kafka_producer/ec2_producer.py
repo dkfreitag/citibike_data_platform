@@ -2,8 +2,9 @@ from kafka import KafkaProducer
 
 import json
 import urllib3
-from datetime import datetime
 import time
+
+import producer_env
 
 
 def fetch_station_status():
@@ -62,7 +63,7 @@ def process_station_status(station_status_object):
 def connect_to_producer():
     # Put EC2 running Kafka on the same VPC as the Lambda function
     # BROKERS = '<internal_ip_of_ec2_running_kafka>:9092'
-    BROKERS = f"10.0.3.157:9092"
+    BROKERS = f"{producer_env.BROKER_PRIVATE_IP}:9092"
 
     producer = KafkaProducer(
         bootstrap_servers=BROKERS,
