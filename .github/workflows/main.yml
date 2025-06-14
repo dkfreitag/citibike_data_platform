@@ -29,11 +29,14 @@ jobs:
         
       - name: Install dependencies
         run: |
-          cd ingestion
+          cd kafka_producer
           python -m pip install --upgrade pip
           pip install -r requirements.txt
         
-        # run tests here
+      - name: Test with pytest
+        run: |
+          pip install pytest pytest-cov
+          pytest tests.py --doctest-modules --junitxml=junit/test-results.xml --cov=com --cov-report=xml --cov-report=html
 
   deploy:
     # needs: [build]
@@ -50,26 +53,31 @@ jobs:
       
       - name: Sync to S3
         run: |
-          aws s3 sync ./kafka_deploy s3://citibike-data-platform-project-bucket/kafka_deploy
-          aws s3 sync ./ingestion s3://citibike-data-platform-project-bucket/ingestion
+          aws s3 sync ./kafka_broker s3://citibike-data-platform-project-bucket/kafka_broker
+          aws s3 sync ./kafka_producer s3://citibike-data-platform-project-bucket/kafka_producer
         
-      - name: Deploy Kafka to EC2
+      - name: Deploy Kafka Broker to EC2
         env:
           PRIVATE_KEY: ${{ secrets.EC2_PRIVATE_KEY }}
-          HOST: ${{ secrets.EC2_HOST }}
+          HOST: ${{ secrets.CITIBIKE_KAFKA_BROKER_HOST }}
           USER: ${{ secrets.EC2_USER }}          
         run: |
           echo "$PRIVATE_KEY" > github-ec2.pem && chmod 600 github-ec2.pem
           ssh -o StrictHostKeyChecking=no -i github-ec2.pem ${USER}@${HOST} '
+          sudo snap install aws-cli --classic
+          sudo snap install docker
           aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws configure set default.region us-east-1
-          cd kafka_deploy
-          aws s3 sync s3://citibike-data-platform-project-bucket/kafka_deploy/ .
+          rm -rf kafka_broker
+          mkdir kafka_broker
+          cd kafka_broker
+          aws s3 sync s3://citibike-data-platform-project-bucket/kafka_broker/ .
           sudo docker compose down
           sudo docker compose up -d --force-recreate
           '
-      - name: Deploy Producer to EC2
+
+      - name: Deploy Kafka Producer to EC2
         env:
           PRIVATE_KEY: ${{ secrets.EC2_PRIVATE_KEY }}
           HOST: ${{ secrets.CITIBIKE_KAFKA_PRODUCER_HOST }}
@@ -77,12 +85,16 @@ jobs:
         run: |
           echo "$PRIVATE_KEY" > github-ec2.pem && chmod 600 github-ec2.pem
           ssh -o StrictHostKeyChecking=no -i github-ec2.pem ${USER}@${HOST} '
+          sudo snap install aws-cli --classic
+          sudo snap install docker
           aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws configure set default.region us-east-1
           rm -rf producer_deploy
           mkdir producer_deploy
           cd producer_deploy
-          aws s3 sync s3://citibike-data-platform-project-bucket/ingestion/ .
+          aws s3 sync s3://citibike-data-platform-project-bucket/kafka_producer/ .
+          sudo docker compose down
           sudo docker compose build
+          sudo docker compose up -d --force--recreate
           '

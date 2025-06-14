@@ -1,23 +1,22 @@
-# pip install kafka_python
 from kafka import KafkaProducer
 
 import json
 import urllib3
 from datetime import datetime
-from datetime import timezone
 import time
+
 
 def fetch_station_status():
     http = urllib3.PoolManager()
 
     r = http.request("GET", "https://gbfs.lyft.com/gbfs/2.3/bkn/en/station_status.json")
-    r_dict = json.loads(r.data.decode(encoding='utf-8', errors='strict'))
+    r_dict = json.loads(r.data.decode(encoding="utf-8", errors="strict"))
 
     return r_dict
 
+
 def process_station_status(station_status_object):
 
-    lambda_timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
     last_updated = station_status_object['last_updated']
     version = station_status_object['version']
 
@@ -27,7 +26,6 @@ def process_station_status(station_status_object):
         record = {}
 
         # metadata common to all records
-        record['lambda_timestamp'] = lambda_timestamp
         record['last_updated'] = last_updated
         record['version'] = version
 
@@ -45,14 +43,16 @@ def process_station_status(station_status_object):
 
         # parse bike types
         for vtype in range(len(station_status_object['data']['stations'][station]['vehicle_types_available'])):
-            veh_type_id = station_status_object['data']['stations'][station]['vehicle_types_available'][vtype]['vehicle_type_id']
+            veh_type_id = station_status_object['data']['stations'][
+                station]['vehicle_types_available'][vtype]['vehicle_type_id']
 
             if veh_type_id == '1':
                 record['vehicle_type_id_1_count'] = station_status_object['data']['stations'][station]['vehicle_types_available'][vtype]['count']
             elif veh_type_id == '2':
                 record['vehicle_type_id_2_count'] = station_status_object['data']['stations'][station]['vehicle_types_available'][vtype]['count']
             else:
-                raise Exception('Error! Unexpected vehicle type ID encountered.')
+                raise Exception(
+                    'Error! Unexpected vehicle type ID encountered.')
 
         station_status_records.append(record)
 
@@ -66,19 +66,20 @@ def connect_to_producer():
 
     producer = KafkaProducer(
         bootstrap_servers=BROKERS,
-        value_serializer=lambda v: json.dumps(v).encode('utf-8'),
+        value_serializer=lambda v: json.dumps(v).encode("utf-8"),
         retry_backoff_ms=10,
-        request_timeout_ms=30000,)
+        request_timeout_ms=30000,
+    )
 
     return producer
 
-def main():
 
+def main():
     station_status_object = fetch_station_status()
     station_status_records = process_station_status(station_status_object)
 
     producer = connect_to_producer()
-    topicname = 'station-status'
+    topicname = "station-status"
 
     for record in station_status_records:
         try:
@@ -89,7 +90,8 @@ def main():
         except Exception as e:
             print(e.with_traceback())
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     # every 60 seconds
     while True:
         main()
