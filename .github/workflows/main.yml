@@ -75,8 +75,8 @@ jobs:
           cd kafka_broker
           aws s3 sync --delete s3://citibike-data-platform-project-bucket/kafka_broker/ .
           sudo docker compose down
-          sudo docker compose up -d --force-recreate
           '
+        # sudo docker compose up -d --force-recreate
 
       - name: Deploy Kafka Producer to EC2
         env:
@@ -96,6 +96,6 @@ jobs:
           cd producer_deploy
           aws s3 sync --delete s3://citibike-data-platform-project-bucket/kafka_producer/ .
           sudo docker compose down
-          sudo docker compose build
-          sudo docker compose up -d --force-recreate
+          sudo docker compose build  
           '
+        # sudo docker compose up -d --force-recreate
