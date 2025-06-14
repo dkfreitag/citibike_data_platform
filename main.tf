@@ -24,13 +24,13 @@ provider "aws" {
 }
 
 # EC2 Instance
-resource "aws_instance" "new_citibike_kafka_broker" {
+resource "aws_instance" "citibike_kafka_broker" {
   ami                         = "ami-020cba7c55df1f615"
   instance_type               = "t2.large"
   subnet_id                   = "subnet-21f4937e"
   vpc_security_group_ids      = ["sg-555a955a"]
   key_name                    = "key-pair-20250320"
-  private_ip                  = "172.31.41.227"
+  private_ip                  = "172.31.41.225"
   associate_public_ip_address = true
   availability_zone           = "us-east-1b"
   
@@ -55,6 +55,6 @@ resource "aws_instance" "new_citibike_kafka_broker" {
   }
   
   tags = {
-    Name = "new-citibike-kafka-broker"
+    Name = "citibike-kafka-broker"
   }
 }
