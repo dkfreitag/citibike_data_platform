@@ -23,7 +23,7 @@ provider "aws" {
   secret_key = var.aws_secret_key
 }
 
-# EC2 Instance
+# Broker EC2 Instance
 resource "aws_instance" "citibike_kafka_broker" {
   ami                         = "ami-020cba7c55df1f615"
   instance_type               = "t2.large"
@@ -56,5 +56,44 @@ resource "aws_instance" "citibike_kafka_broker" {
   
   tags = {
     Name = "citibike-kafka-broker"
+  }
+}
+
+# Producer EC2 Instance
+resource "aws_instance" "citibike_kafka_producer" {
+  ami                         = "ami-020cba7c55df1f615"
+  instance_type               = "t2.micro"
+  subnet_id                   = "subnet-af0a6a8e"
+  vpc_security_group_ids      = ["sg-555a955a"]
+  key_name                    = "key-pair-20250320"
+  private_ip                  = "172.31.89.25"
+  availability_zone           = "us-east-1d"
+  
+  root_block_device {
+    volume_type           = "gp3"
+    volume_size           = 8
+    iops                  = 3000
+    delete_on_termination = true
+    encrypted             = false
+  }
+  
+  metadata_options {
+    http_endpoint               = "enabled"
+    http_tokens                 = "required"  # IMDSv2 is typically the default now
+    http_put_response_hop_limit = 1          # Default value
+  }
+  
+  source_dest_check           = true
+  monitoring                  = false
+  ebs_optimized              = false
+  disable_api_termination    = false
+  instance_initiated_shutdown_behavior = "stop"
+  
+  credit_specification {
+    cpu_credits = "standard"
+  }
+  
+  tags = {
+    Name = "citibike-kafka-producer"
   }
 }
