@@ -64,7 +64,6 @@ jobs:
           ssh -o StrictHostKeyChecking=no -i github-ec2.pem ${USER}@${HOST} '
           sudo -s
           cd kafka_deploy
-          docker compose down
           aws s3 sync s3://citibike-data-platform-project-bucket/kafka_deploy/ .
           docker compose up -d
           '
