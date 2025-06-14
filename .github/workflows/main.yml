@@ -62,12 +62,11 @@ jobs:
         run: |
           echo "$PRIVATE_KEY" > github-ec2.pem && chmod 600 github-ec2.pem
           ssh -o StrictHostKeyChecking=no -i github-ec2.pem ${USER}@${HOST} '
-          sudo -s
           aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws configure set default.region us-east-1
           cd kafka_deploy
           aws s3 sync s3://citibike-data-platform-project-bucket/kafka_deploy/ .
-          docker compose down
-          docker compose up -d -- force-recreate
+          sudo docker compose down
+          sudo docker compose up -d -- force-recreate
           '
