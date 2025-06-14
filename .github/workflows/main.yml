@@ -35,11 +35,12 @@ jobs:
         
       - name: Test with pytest
         run: |
+          cd kafka_producer
           pip install pytest pytest-cov
           pytest tests.py --doctest-modules --junitxml=junit/test-results.xml --cov=com --cov-report=xml --cov-report=html
 
   deploy:
-    # needs: [build]
+    needs: [build]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -96,5 +97,5 @@ jobs:
           aws s3 sync s3://citibike-data-platform-project-bucket/kafka_producer/ .
           sudo docker compose down
           sudo docker compose build
-          sudo docker compose up -d --force--recreate
+          sudo docker compose up -d --force-recreate
           '
