@@ -68,5 +68,5 @@ jobs:
           cd kafka_deploy
           aws s3 sync s3://citibike-data-platform-project-bucket/kafka_deploy/ .
           sudo docker compose down
-          sudo docker compose up -d -- force-recreate
+          sudo docker compose up -d --force-recreate
           '
