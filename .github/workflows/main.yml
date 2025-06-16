@@ -87,7 +87,7 @@ jobs:
           mkdir kafka_broker
           cd kafka_broker
           aws s3 sync --delete s3://citibike-data-platform-project-bucket/kafka_broker/ .
-          export BROKER_PRIVATE_IP_ADDRESS=${{ env.BROKER_PRIVATE_IP_ADDRESS }}
+          echo "BROKER_PRIVATE_IP_ADDRESS=${{ env.BROKER_PRIVATE_IP_ADDRESS }}" > .env
           sudo docker compose down
           '
         # sudo docker compose up -d --force-recreate
@@ -109,7 +109,7 @@ jobs:
           mkdir kafka_producer
           cd kafka_producer
           aws s3 sync --delete s3://citibike-data-platform-project-bucket/kafka_producer/ .
-          export BROKER_PRIVATE_IP_ADDRESS=${{ env.BROKER_PRIVATE_IP_ADDRESS }}
+          echo "BROKER_PRIVATE_IP_ADDRESS=${{ env.BROKER_PRIVATE_IP_ADDRESS }}" > .env
           sudo docker compose down
           sudo docker compose build
           '
@@ -132,7 +132,7 @@ jobs:
           mkdir kafka_consumer
           cd kafka_consumer
           aws s3 sync --delete s3://citibike-data-platform-project-bucket/kafka_consumer/ .
-          export BROKER_PRIVATE_IP_ADDRESS=${{ env.BROKER_PRIVATE_IP_ADDRESS }}
+          echo "BROKER_PRIVATE_IP_ADDRESS=${{ env.BROKER_PRIVATE_IP_ADDRESS }}" > .env
           sudo docker compose down
           sudo docker compose build
           '
