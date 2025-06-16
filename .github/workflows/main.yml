@@ -1,12 +1,6 @@
 name: Test and Deploy
 
 on:
-  # push:
-  #   branches:
-  #   - main
-  # pull_request:
-  #   branches:
-  #   - main
   workflow_run:
     workflows: [Terraform]
     types:
@@ -64,180 +58,77 @@ jobs:
           echo "CITIBIKE_KAFKA_PRODUCER_HOST=$PUBLIC_IP" >> $GITHUB_ENV
           PUBLIC_IP=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=citibike-kafka-consumer" --query 'Reservations[0].Instances[0].PublicIpAddress' --output text)
           echo "CITIBIKE_KAFKA_CONSUMER_HOST=$PUBLIC_IP" >> $GITHUB_ENV
-      
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Kafka Producer - Build and push Docker image
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: "citibike-ecr-repo"
-          IMAGE_NAME: "kafka_producer"
-          IMAGE_TAG: ${{ github.sha }}
-          
+      - name: Sync to S3
         run: |
+          aws s3 sync --delete ./kafka_broker s3://citibike-data-platform-project-bucket/kafka_broker
+          aws s3 sync --delete ./kafka_producer s3://citibike-data-platform-project-bucket/kafka_producer
+          aws s3 sync --delete ./kafka_consumer s3://citibike-data-platform-project-bucket/kafka_consumer
+
+      - name: Deploy Kafka Broker to EC2
+        env:
+          PRIVATE_KEY: ${{ secrets.EC2_PRIVATE_KEY }}
+          HOST: ${{ env.CITIBIKE_KAFKA_BROKER_HOST }}
+          USER: ${{ secrets.EC2_USER }}          
+        run: |
+          echo "$PRIVATE_KEY" > github-ec2.pem && chmod 600 github-ec2.pem
+          ssh -o StrictHostKeyChecking=no -i github-ec2.pem ${USER}@${HOST} '
+          sudo snap install aws-cli --classic
+          sudo snap install docker
+          aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws configure set default.region us-east-1
+          rm -rf kafka_broker
+          mkdir kafka_broker
+          cd kafka_broker
+          aws s3 sync --delete s3://citibike-data-platform-project-bucket/kafka_broker/ .
+          export BROKER_PRIVATE_IP_ADDRESS=${{ env.BROKER_PRIVATE_IP_ADDRESS }}
+          sudo docker compose down
+          '
+        # sudo docker compose up -d --force-recreate
+
+      - name: Deploy Kafka Producer to EC2
+        env:
+          PRIVATE_KEY: ${{ secrets.EC2_PRIVATE_KEY }}
+          HOST: ${{ env.CITIBIKE_KAFKA_PRODUCER_HOST }}
+          USER: ${{ secrets.EC2_USER }}          
+        run: |
+          echo "$PRIVATE_KEY" > github-ec2.pem && chmod 600 github-ec2.pem
+          ssh -o StrictHostKeyChecking=no -i github-ec2.pem ${USER}@${HOST} '
+          sudo snap install aws-cli --classic
+          sudo snap install docker
+          aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws configure set default.region us-east-1
+          rm -rf kafka_producer
+          mkdir kafka_producer
           cd kafka_producer
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY/$IMAGE_NAME:$IMAGE_TAG .
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY/$IMAGE_NAME:$IMAGE_TAG
+          aws s3 sync --delete s3://citibike-data-platform-project-bucket/kafka_producer/ .
+          export BROKER_PRIVATE_IP_ADDRESS=${{ env.BROKER_PRIVATE_IP_ADDRESS }}
+          sudo docker compose down
+          sudo docker compose build
+          '
+        # sudo docker compose up -d --force-recreate
 
-      - name: Kafka Consumer - Build and push Docker image
+      - name: Deploy Kafka Consumer to EC2
         env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: "citibike-ecr-repo"
-          IMAGE_NAME: "kafka_consumer"
-          IMAGE_TAG: ${{ github.sha }}
-          
+          PRIVATE_KEY: ${{ secrets.EC2_PRIVATE_KEY }}
+          HOST: ${{ env.CITIBIKE_KAFKA_CONSUMER_HOST }}
+          USER: ${{ secrets.EC2_USER }}          
         run: |
+          echo "$PRIVATE_KEY" > github-ec2.pem && chmod 600 github-ec2.pem
+          ssh -o StrictHostKeyChecking=no -i github-ec2.pem ${USER}@${HOST} '
+          sudo snap install aws-cli --classic
+          sudo snap install docker
+          aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws configure set default.region us-east-1
+          rm -rf kafka_consumer
+          mkdir kafka_consumer
           cd kafka_consumer
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY/$IMAGE_NAME:$IMAGE_TAG .
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY/$IMAGE_NAME:$IMAGE_TAG
-
-      - name: Kafka Broker - Copy Docker compose.yaml file to EC2
-        uses: appleboy/scp-action@master
-        with:
-          host: ${{ env.CITIBIKE_KAFKA_BROKER_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_PRIVATE_KEY }}
-          source: "kafka_broker/compose.yaml"
-          target: "/home/$username/kafka_broker/"
-
-      - name: Kafka Broker - Deploy to EC2
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ env.CITIBIKE_KAFKA_BROKER_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_PRIVATE_KEY }}
-          script: |
-            cd /home/$username/kafka_broker
-            aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin ${{ steps.login-ecr.outputs.registry }}
-            export ECR_REGISTRY=${{ steps.login-ecr.outputs.registry }}
-            export ECR_REPOSITORY=${{ env.ECR_REPOSITORY }}
-            export IMAGE_TAG=${{ github.sha }}
-            docker-compose down
-            docker-compose pull
-          # docker-compose up -d
-
-      - name: Kafka Producer - Copy Docker compose.yaml file to EC2
-        uses: appleboy/scp-action@master
-        with:
-          host: ${{ env.CITIBIKE_KAFKA_PRODUCER_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_PRIVATE_KEY }}
-          source: "kafka_producer/compose.yaml"
-          target: "/home/$username/kafka_producer/"
-
-      - name: Kafka Producer - Deploy to EC2
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ env.CITIBIKE_KAFKA_PRODUCER_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_PRIVATE_KEY }}
-          script: |
-            cd /home/$username/kafka_producer
-            aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin ${{ steps.login-ecr.outputs.registry }}
-            export ECR_REGISTRY=${{ steps.login-ecr.outputs.registry }}
-            export ECR_REPOSITORY=${{ env.ECR_REPOSITORY }}
-            export IMAGE_TAG=${{ github.sha }}
-            docker-compose down
-            docker-compose pull
-          # docker-compose up -d
-
-      - name: Kafka Consumer - Copy Docker compose.yaml file to EC2
-        uses: appleboy/scp-action@master
-        with:
-          host: ${{ env.CITIBIKE_KAFKA_CONSUMER_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_PRIVATE_KEY }}
-          source: "kafka_consumer/compose.yaml"
-          target: "/home/$username/kafka_consumer/"
-
-      - name: Kafka Consumer - Deploy to EC2
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ env.CITIBIKE_KAFKA_CONSUMER_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_PRIVATE_KEY }}
-          script: |
-            cd /home/$username/kafka_consumer
-            aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin ${{ steps.login-ecr.outputs.registry }}
-            export ECR_REGISTRY=${{ steps.login-ecr.outputs.registry }}
-            export ECR_REPOSITORY=${{ env.ECR_REPOSITORY }}
-            export IMAGE_TAG=${{ github.sha }}
-            docker-compose down
-            docker-compose pull
-          # docker-compose up -d
-
-
-
-
-      # - name: Sync to S3
-      #   run: |
-      #     aws s3 sync --delete ./kafka_broker s3://citibike-data-platform-project-bucket/kafka_broker
-      #     aws s3 sync --delete ./kafka_producer s3://citibike-data-platform-project-bucket/kafka_producer
-      #     aws s3 sync --delete ./kafka_consumer s3://citibike-data-platform-project-bucket/kafka_consumer
-
-      # - name: Deploy Kafka Broker to EC2
-      #   env:
-      #     PRIVATE_KEY: ${{ secrets.EC2_PRIVATE_KEY }}
-      #     HOST: ${{ env.CITIBIKE_KAFKA_BROKER_HOST }}
-      #     USER: ${{ secrets.EC2_USER }}          
-      #   run: |
-      #     echo "$PRIVATE_KEY" > github-ec2.pem && chmod 600 github-ec2.pem
-      #     ssh -o StrictHostKeyChecking=no -i github-ec2.pem ${USER}@${HOST} '
-      #     sudo snap install aws-cli --classic
-      #     sudo snap install docker
-      #     aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
-      #     aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      #     aws configure set default.region us-east-1
-      #     rm -rf kafka_broker
-      #     mkdir kafka_broker
-      #     cd kafka_broker
-      #     aws s3 sync --delete s3://citibike-data-platform-project-bucket/kafka_broker/ .
-      #     sudo docker compose down
-      #     '
-      #   # sudo docker compose up -d --force-recreate
-
-      # - name: Deploy Kafka Producer to EC2
-      #   env:
-      #     PRIVATE_KEY: ${{ secrets.EC2_PRIVATE_KEY }}
-      #     HOST: ${{ env.CITIBIKE_KAFKA_PRODUCER_HOST }}
-      #     USER: ${{ secrets.EC2_USER }}          
-      #   run: |
-      #     echo "$PRIVATE_KEY" > github-ec2.pem && chmod 600 github-ec2.pem
-      #     ssh -o StrictHostKeyChecking=no -i github-ec2.pem ${USER}@${HOST} '
-      #     sudo snap install aws-cli --classic
-      #     sudo snap install docker
-      #     aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
-      #     aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      #     aws configure set default.region us-east-1
-      #     rm -rf producer_deploy
-      #     mkdir producer_deploy
-      #     cd producer_deploy
-      #     aws s3 sync --delete s3://citibike-data-platform-project-bucket/kafka_producer/ .
-      #     sudo docker compose down
-      #     sudo docker compose build
-      #     '
-      #   # sudo docker compose up -d --force-recreate
-
-      # - name: Deploy Kafka Consumer to EC2
-      #   env:
-      #     PRIVATE_KEY: ${{ secrets.EC2_PRIVATE_KEY }}
-      #     HOST: ${{ env.CITIBIKE_KAFKA_CONSUMER_HOST }}
-      #     USER: ${{ secrets.EC2_USER }}          
-      #   run: |
-      #     echo "$PRIVATE_KEY" > github-ec2.pem && chmod 600 github-ec2.pem
-      #     ssh -o StrictHostKeyChecking=no -i github-ec2.pem ${USER}@${HOST} '
-      #     sudo snap install aws-cli --classic
-      #     sudo snap install docker
-      #     aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
-      #     aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      #     aws configure set default.region us-east-1
-      #     rm -rf consumer_deploy
-      #     mkdir consumer_deploy
-      #     cd consumer_deploy
-      #     aws s3 sync --delete s3://citibike-data-platform-project-bucket/kafka_consumer/ .
-      #     sudo docker compose down
-      #     sudo docker compose build
-      #     '
-      #   # sudo docker compose up -d --force-recreate
+          aws s3 sync --delete s3://citibike-data-platform-project-bucket/kafka_consumer/ .
+          export BROKER_PRIVATE_IP_ADDRESS=${{ env.BROKER_PRIVATE_IP_ADDRESS }}
+          sudo docker compose down
+          sudo docker compose build
+          '
+        # sudo docker compose up -d --force-recreate

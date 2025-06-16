@@ -4,8 +4,7 @@ import json
 import urllib3
 import time
 import logging
-
-import producer_env
+import os
 
 # Configure the logging system
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -70,7 +69,7 @@ def process_station_status(station_status_object):
 def connect_to_producer():
     # Put EC2 running Kafka on the same VPC as the Lambda function
     # BROKERS = '<internal_ip_of_ec2_running_kafka>:9092'
-    BROKERS = f"{producer_env.BROKER_PRIVATE_IP}:9092"
+    BROKERS = f"{os.envrion['BROKER_PRIVATE_IP']}:9092"
 
     producer = KafkaProducer(
         bootstrap_servers=BROKERS,
