@@ -58,6 +58,11 @@ jobs:
           echo "CITIBIKE_KAFKA_PRODUCER_HOST=$PUBLIC_IP" >> $GITHUB_ENV
           PUBLIC_IP=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=citibike-kafka-consumer" --query 'Reservations[0].Instances[0].PublicIpAddress' --output text)
           echo "CITIBIKE_KAFKA_CONSUMER_HOST=$PUBLIC_IP" >> $GITHUB_ENV
+      
+      - name: Get Broker EC2 Instance Private IP
+        run: |
+          PRIVATE_IP=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=citibike-kafka-broker" --query 'Reservations[0].Instances[0].PrivateIpAddress' --output text)
+          echo "BROKER_PRIVATE_IP_ADDRESS=$PRIVATE_IP" >> $GITHUB_ENV
 
       - name: Sync to S3
         run: |
