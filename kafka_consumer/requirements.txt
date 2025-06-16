@@ -1,1 +1,2 @@
 kafka_python==2.2.11
+python-dotenv==1.1.0
