@@ -23,6 +23,7 @@ provider "aws" {
   secret_key = var.aws_secret_key
 }
 
+
 # Broker EC2 Instance
 resource "aws_instance" "citibike_kafka_broker" {
   ami                         = "ami-020cba7c55df1f615"
@@ -59,6 +60,7 @@ resource "aws_instance" "citibike_kafka_broker" {
   }
 }
 
+
 # Producer EC2 Instance
 resource "aws_instance" "citibike_kafka_producer" {
   ami                         = "ami-020cba7c55df1f615"
@@ -80,13 +82,13 @@ resource "aws_instance" "citibike_kafka_producer" {
   metadata_options {
     http_endpoint               = "enabled"
     http_tokens                 = "required"  # IMDSv2 is typically the default now
-    http_put_response_hop_limit = 1          # Default value
+    http_put_response_hop_limit = 1           # Default value
   }
   
-  source_dest_check           = true
-  monitoring                  = false
-  ebs_optimized              = false
-  disable_api_termination    = false
+  source_dest_check                    = true
+  monitoring                           = false
+  ebs_optimized                        = false
+  disable_api_termination              = false
   instance_initiated_shutdown_behavior = "stop"
   
   credit_specification {
@@ -95,5 +97,60 @@ resource "aws_instance" "citibike_kafka_producer" {
   
   tags = {
     Name = "citibike-kafka-producer"
+  }
+}
+
+
+# Consumer EC2 Instance
+resource "aws_instance" "citibike_kafka_consumer" {
+  ami                         = "ami-020cba7c55df1f615"
+  instance_type               = "t2.micro"
+  subnet_id                   = "subnet-af0a6a8e"
+  vpc_security_group_ids      = ["sg-555a955a"]
+  key_name                    = "key-pair-20250320"
+  private_ip                  = "172.31.89.26"
+  availability_zone           = "us-east-1d"
+  
+  root_block_device {
+    volume_type           = "gp3"
+    volume_size           = 8
+    iops                  = 3000
+    delete_on_termination = true
+    encrypted             = false
+  }
+  
+  metadata_options {
+    http_endpoint               = "enabled"
+    http_tokens                 = "required"  # IMDSv2 is typically the default now
+    http_put_response_hop_limit = 1           # Default value
+  }
+  
+  source_dest_check                    = true
+  monitoring                           = false
+  ebs_optimized                        = false
+  disable_api_termination              = false
+  instance_initiated_shutdown_behavior = "stop"
+  
+  credit_specification {
+    cpu_credits = "standard"
+  }
+  
+  tags = {
+    Name = "citibike-kafka-consumer"
+  }
+}
+
+
+# ECR Repository
+resource "aws_ecr_repository" "citibike_ecr_repo" {
+  name                 = "citibike-ecr-repo"
+  image_tag_mutability = "MUTABLE"
+  
+  image_scanning_configuration {
+    scan_on_push = false
+  }
+  
+  encryption_configuration {
+    encryption_type = "AES256"
   }
 }

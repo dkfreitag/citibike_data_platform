@@ -3,8 +3,15 @@ from kafka import KafkaProducer
 import json
 import urllib3
 import time
+import logging
 
 import producer_env
+
+# Configure the logging system
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+
+# Create a logger
+logger = logging.getLogger(__name__)
 
 
 def fetch_station_status():
@@ -68,12 +75,15 @@ def connect_to_producer():
     producer = KafkaProducer(
         bootstrap_servers=BROKERS,
         value_serializer=lambda v: json.dumps(v).encode("utf-8"),
-        retry_backoff_ms=10,
-        request_timeout_ms=30000,
     )
 
     return producer
 
+def on_send_success(record_metadata):
+    logger.info(f"Message sent. Record metadata: {record_metadata}")
+
+def on_send_error(exc):
+    logger.error(f"Failed to send message: {exc}")
 
 def main():
     station_status_object = fetch_station_status()
@@ -83,14 +93,9 @@ def main():
     topicname = "station-status"
 
     for record in station_status_records:
-        try:
-            future = producer.send(topicname, value=record)
-            producer.flush()
-            print(future.get(timeout=10))
-
-        except Exception as e:
-            print(e.with_traceback())
-
+        producer.send(topicname, value=record).add_callback(on_send_success).add_errback(on_send_error)
+    
+    producer.flush()
 
 if __name__ == "__main__":
     # every 60 seconds

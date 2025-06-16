@@ -60,11 +60,21 @@ jobs:
         run: |
           aws s3 sync --delete ./kafka_broker s3://citibike-data-platform-project-bucket/kafka_broker
           aws s3 sync --delete ./kafka_producer s3://citibike-data-platform-project-bucket/kafka_producer
-        
+          aws s3 sync --delete ./kafka_consumer s3://citibike-data-platform-project-bucket/kafka_consumer
+
+      - name: Get EC2 Instance Public IPs
+        run: |
+          PUBLIC_IP=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=citibike-kafka-broker" --query 'Reservations[0].Instances[0].PublicIpAddress' --output text)
+          echo "CITIBIKE_KAFKA_BROKER_HOST=$PUBLIC_IP" >> $GITHUB_ENV
+          PUBLIC_IP=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=citibike-kafka-producer" --query 'Reservations[0].Instances[0].PublicIpAddress' --output text)
+          echo "CITIBIKE_KAFKA_PRODUCER_HOST=$PUBLIC_IP" >> $GITHUB_ENV
+          PUBLIC_IP=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=citibike-kafka-consumer" --query 'Reservations[0].Instances[0].PublicIpAddress' --output text)
+          echo "CITIBIKE_KAFKA_CONSUMER_HOST=$PUBLIC_IP" >> $GITHUB_ENV
+
       - name: Deploy Kafka Broker to EC2
         env:
           PRIVATE_KEY: ${{ secrets.EC2_PRIVATE_KEY }}
-          HOST: ${{ secrets.CITIBIKE_KAFKA_BROKER_HOST }}
+          HOST: ${{ env.CITIBIKE_KAFKA_BROKER_HOST }}
           USER: ${{ secrets.EC2_USER }}          
         run: |
           echo "$PRIVATE_KEY" > github-ec2.pem && chmod 600 github-ec2.pem
@@ -85,7 +95,7 @@ jobs:
       - name: Deploy Kafka Producer to EC2
         env:
           PRIVATE_KEY: ${{ secrets.EC2_PRIVATE_KEY }}
-          HOST: ${{ secrets.CITIBIKE_KAFKA_PRODUCER_HOST }}
+          HOST: ${{ env.CITIBIKE_KAFKA_PRODUCER_HOST }}
           USER: ${{ secrets.EC2_USER }}          
         run: |
           echo "$PRIVATE_KEY" > github-ec2.pem && chmod 600 github-ec2.pem
@@ -100,6 +110,28 @@ jobs:
           cd producer_deploy
           aws s3 sync --delete s3://citibike-data-platform-project-bucket/kafka_producer/ .
           sudo docker compose down
-          sudo docker compose build  
+          sudo docker compose build
+          '
+        # sudo docker compose up -d --force-recreate
+
+      - name: Deploy Kafka Consumer to EC2
+        env:
+          PRIVATE_KEY: ${{ secrets.EC2_PRIVATE_KEY }}
+          HOST: ${{ env.CITIBIKE_KAFKA_CONSUMER_HOST }}
+          USER: ${{ secrets.EC2_USER }}          
+        run: |
+          echo "$PRIVATE_KEY" > github-ec2.pem && chmod 600 github-ec2.pem
+          ssh -o StrictHostKeyChecking=no -i github-ec2.pem ${USER}@${HOST} '
+          sudo snap install aws-cli --classic
+          sudo snap install docker
+          aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws configure set default.region us-east-1
+          rm -rf consumer_deploy
+          mkdir consumer_deploy
+          cd consumer_deploy
+          aws s3 sync --delete s3://citibike-data-platform-project-bucket/kafka_consumer/ .
+          sudo docker compose down
+          sudo docker compose build
           '
         # sudo docker compose up -d --force-recreate
