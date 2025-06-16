@@ -1,6 +1,10 @@
 from kafka import KafkaConsumer
 
-consumer = KafkaConsumer('station-status', bootstrap_servers='172.31.41.225:9092')
+def main():
+    consumer = KafkaConsumer('station-status', bootstrap_servers='172.31.41.225:9092')
 
-for message in consumer:
-    print(message.value)
+    for message in consumer:
+        print(message.value)
+
+if __name__ == '__main__':
+    main()
