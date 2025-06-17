@@ -53,8 +53,28 @@ permissions:
   contents: read
 
 jobs:
+  # JOB to run change detection
+  changes:
+    runs-on: ubuntu-latest
+    # Required permissions
+    permissions:
+      pull-requests: read
+    # Set job outputs to values from filter step
+    outputs:
+      run_terraform: ${{ steps.filter.outputs.run_terraform }}
+    steps:
+    # For pull requests it's not necessary to checkout the code
+    - uses: dorny/paths-filter@v2
+      id: filter
+      with:
+        filters: |
+          run_terraform:
+            - 'main.tf'
+
   terraform:
     name: 'Terraform'
+    needs: changes
+    if: ${{ needs.changes.outputs.run_terraform == 'true' }}
     runs-on: ubuntu-latest
     environment: production
 
