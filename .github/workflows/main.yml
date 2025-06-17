@@ -155,7 +155,10 @@ jobs:
             mkdir kafka_consumer
             cd kafka_consumer
             aws s3 sync --delete s3://citibike-data-platform-project-bucket/kafka_consumer .
-            echo "BROKER_PRIVATE_IP_ADDRESS=${{ env.BROKER_PRIVATE_IP_ADDRESS }}" > .env
+            echo "BROKER_PRIVATE_IP_ADDRESS=${{ env.BROKER_PRIVATE_IP_ADDRESS }}" >> .env
+            echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}" >> .env
+            echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> .env
+            echo "AWS_DEFAULT_REGION=us-east-1" >> .env
             sudo docker compose down
             sudo docker compose build
           # sudo docker compose up -d --force-recreate

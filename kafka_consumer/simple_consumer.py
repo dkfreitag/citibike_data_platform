@@ -26,7 +26,7 @@ def main():
     consumer = KafkaConsumer(
         "station-status",
         bootstrap_servers=f"{os.getenv('BROKER_PRIVATE_IP_ADDRESS')}:9092",
-        value_deserializer=lambda x: json.loads(x.decode("utf-8"))
+        value_deserializer=lambda x: json.loads(x.decode("utf-8")),
     )
 
     message_batch = []
@@ -36,12 +36,16 @@ def main():
         if len(message_batch) == 1000:
             try:
                 # Unix timestamp as object_key
-                object_key = str(time.time()).split(".")[0]
+                object_key = 'kafka_output/' + str(time.time()).split(".")[0]
+                
+                # turn each message in the batch into a single row with list comprehension
+                # then, join together with newline characters to place a newline at the end of each row
+                object_body = "\n".join([json.dumps(msg_obj) for msg_obj in message_batch])
 
                 s3.put_object(
-                    Bucket=bucket_name, Key=object_key, Body=str(message_batch)
+                    Bucket=bucket_name, Key=object_key, Body=object_body
                 )
-                logger.info("Saved batch of records from Kafka.")
+                logger.info("Saved batch of 1000 records from Kafka.")
 
                 # clear out message_batch
                 message_batch = []
