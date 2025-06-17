@@ -1,6 +1,7 @@
 services:
   producer:
-    build: .
+    # build: .
+    image: 533327597913.dkr.ecr.us-east-1.amazonaws.com/citibike-project/kafka-producer-img:latest
     ports:
       - "9092:9092"
     restart: on-failure

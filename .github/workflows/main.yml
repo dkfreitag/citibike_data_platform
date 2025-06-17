@@ -68,6 +68,13 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: 'us-east-1'
+
+      - name: Sync to S3
+        #if: steps.filter.outputs.kafka_broker == 'true' || steps.filter.outputs.kafka_producer == 'true' || steps.filter.outputs.kafka_consumer == 'true'
+        run: |
+          aws s3 cp ./kafka_broker/compose.yaml s3://citibike-data-platform-project-bucket/kafka_broker/compose.yaml
+          aws s3 cp ./kafka_producer/compose.yaml s3://citibike-data-platform-project-bucket/kafka_producer/compose.yaml
+          aws s3 cp ./kafka_consumer/compose.yaml s3://citibike-data-platform-project-bucket/kafka_consumer/compose.yaml
       
       - name: Get EC2 Instance Public IPs
         #if: steps.filter.outputs.kafka_broker == 'true' || steps.filter.outputs.kafka_producer == 'true' || steps.filter.outputs.kafka_consumer == 'true'
@@ -85,20 +92,21 @@ jobs:
           PRIVATE_IP=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=citibike-kafka-broker" --query 'Reservations[0].Instances[0].PrivateIpAddress' --output text)
           echo "BROKER_PRIVATE_IP_ADDRESS=$PRIVATE_IP" >> $GITHUB_ENV
 
-      - name: Sync to S3
-        #if: steps.filter.outputs.kafka_broker == 'true' || steps.filter.outputs.kafka_producer == 'true' || steps.filter.outputs.kafka_consumer == 'true'
-        run: |
-          aws s3 sync --delete ./kafka_broker s3://citibike-data-platform-project-bucket/kafka_broker
-          aws s3 sync --delete ./kafka_producer s3://citibike-data-platform-project-bucket/kafka_producer
-          aws s3 cp ./kafka_consumer/compose.yaml s3://citibike-data-platform-project-bucket/kafka_consumer/compose.yaml
-
-
-### NEW SECTION
-
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
+      - name: Kafka Producer - Build, tag, and push image to Amazon ECR
+        id: build-image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: citibike-project/kafka-producer-img
+          IMAGE_TAG: latest
+        run: |
+          cd kafka_producer
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+      
       - name: Kafka Consumer - Build, tag, and push image to Amazon ECR
         id: build-image
         env:
@@ -110,9 +118,50 @@ jobs:
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
 
+        - name: Deploy Kafka Broker to EC2
+        #if: steps.filter.outputs.kafka_broker == 'true'
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ env.CITIBIKE_KAFKA_BROKER_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_PRIVATE_KEY }}
+          port: 22
+          script: |
+            sudo snap install aws-cli --classic
+            sudo snap install docker
+            aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
+            aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+            aws configure set default.region us-east-1
+            rm -rf kafka_broker
+            mkdir kafka_broker
+            cd kafka_broker
+            aws s3 cp s3://citibike-data-platform-project-bucket/kafka_broker/compose.yaml .
+            echo "BROKER_PRIVATE_IP_ADDRESS=${{ env.BROKER_PRIVATE_IP_ADDRESS }}" > .env
+            sudo docker compose down       
+
+      - name: Deploy Kafka Producer to EC2
+        #if: steps.filter.outputs.kafka_producer == 'true'
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ env.CITIBIKE_KAFKA_PRODUCER_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_PRIVATE_KEY }}
+          port: 22
+          script: |
+            sudo snap install aws-cli --classic
+            sudo snap install docker
+            aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
+            aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+            aws configure set default.region us-east-1
+            rm -rf kafka_producer
+            mkdir kafka_producer
+            cd kafka_producer
+            aws s3 cp s3://citibike-data-platform-project-bucket/kafka_producer/compose.yaml .
+            echo "BROKER_PRIVATE_IP_ADDRESS=${{ env.BROKER_PRIVATE_IP_ADDRESS }}" > .env
+            sudo docker compose down
+
       - name: Deploy Kafka Consumer to EC2
         #if: steps.filter.outputs.kafka_consumer == 'true'
-  
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ env.CITIBIKE_KAFKA_CONSUMER_HOST }}
