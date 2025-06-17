@@ -33,7 +33,6 @@ resource "aws_instance" "citibike_kafka_broker" {
   key_name                    = "key-pair-20250320"
   private_ip                  = "172.31.41.225"
   availability_zone           = "us-east-1b"
-  associate_public_ip_address = true
   
   root_block_device {
     volume_type           = "gp2"  # General Purpose SSD
@@ -70,7 +69,6 @@ resource "aws_instance" "citibike_kafka_producer" {
   key_name                    = "key-pair-20250320"
   private_ip                  = "172.31.89.25"
   availability_zone           = "us-east-1d"
-  associate_public_ip_address = true
   
   root_block_device {
     volume_type           = "gp3"
@@ -111,7 +109,6 @@ resource "aws_instance" "citibike_kafka_consumer" {
   key_name                    = "key-pair-20250320"
   private_ip                  = "172.31.89.26"
   availability_zone           = "us-east-1d"
-  associate_public_ip_address = true
   
   root_block_device {
     volume_type           = "gp3"
