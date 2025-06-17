@@ -3,16 +3,16 @@
 ---
 ## To Do:
 
-- Configure workflow to only run when changes have been made in certain directories
-[] Do this before your next push to main
+Configure workflow to only run when changes have been made in certain directories
+- [ ] Do this before your next push to main
 
 Update to use ECR:
-- [] Deploy Docker container to ECR
-- [] Run Docker Compose from container in ECR
-- [] Update Producer and Consumer to use ECR
+- [ ] Deploy Docker container to ECR
+- [ ] Run Docker Compose from container in ECR
+- [ ] Update Producer and Consumer to use ECR
 
 Save records to S3:
-- [] Use Spark to read from Kafka and write to S3
+- [ ] Use Spark to read from Kafka and write to S3
 
 ```
 from pyspark.sql import SparkSession
@@ -48,7 +48,7 @@ query.awaitTermination()
 
 ## Nice to have list:
 
-[] Mock Kafka unit tests for Kafka Producer
+- [ ] Mock Kafka unit tests for Kafka Producer
 
 ---
 ## Project Outline:
