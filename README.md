@@ -3,45 +3,22 @@
 ---
 ## To Do:
 
-Save records to S3:
-- [ ] Update the Python producer to write to S3 for a test
-- [ ] Use Spark to read from Kafka and write to S3
+- [ ] Terraform to deploy Lambda function
+- [ ] Terraform to deploy Lambda function role and add S3FullAccess permissions
+- [ ] Terraform to deploy Glue Crawlers
+- [ ] Terraform to deploy S3 bucket
+- [ ] Any other infra that I am forgetting?
 
-```
-from pyspark.sql import SparkSession
+Next:
+- [ ] Get a bunch of records
+- [ ] Write a Spark job to join station_information and kafka_output and save it from the raw JSON in Parquet format with partitioning and as an Iceberg table
 
-# Create a SparkSession
-spark = SparkSession.builder \
-    .appName("KafkaToS3Streaming") \
-    .getOrCreate()
+## Misc. to do list:
 
-# Read from Kafka
-kafka_stream_df = spark.readStream \
-    .format("kafka") \
-    .option("kafka.bootstrap.servers", "<kafka_bootstrap_servers>") \
-    .option("subscribe", "<kafka_topic_name>") \
-    .option("startingOffsets", "earliest") \
-    .load()
-
-# (Optional) Process and transform the data
-# Example: Adding a new column
-processed_df = kafka_stream_df.withColumn("processed_time", current_timestamp()) 
-
-# Write to S3
-query = processed_df.writeStream \
-    .format("parquet") \
-    .option("path", "s3a://<s3_bucket_name>/<s3_output_path>") \
-    .option("checkpointLocation", "s3a://<s3_bucket_name>/checkpoint/") \
-    .trigger(processingTime="1 minute") \  # Or trigger(availableNow=True) for periodic processing
-    .start()
-
-# Wait for the termination of the query
-query.awaitTermination()
-```
-
-## Nice to have list:
-
-- [ ] Mock Kafka unit tests for Kafka Producer
+- [ ] Mock Kafka unit tests for Kafka Producer and Kafka Consumer
+- [ ] Mock AWS environment for unit testing the S3 put methods in the Lambda function and Kafka Consumer
+- [ ] Refresh station information every so often - it probably changes
+- [ ] Kafka Consumer: is there a better strategy than batches of 2234 records?
 
 ---
 ## Project Outline:
