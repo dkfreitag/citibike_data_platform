@@ -68,6 +68,29 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: 'us-east-1'
+      
+      - name: Get EC2 Instance Public IPs
+        #if: steps.filter.outputs.kafka_broker == 'true' || steps.filter.outputs.kafka_producer == 'true' || steps.filter.outputs.kafka_consumer == 'true'
+        run: |
+          PUBLIC_IP=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=citibike-kafka-broker" --query 'Reservations[0].Instances[0].PublicIpAddress' --output text)
+          echo "CITIBIKE_KAFKA_BROKER_HOST=$PUBLIC_IP" >> $GITHUB_ENV
+          PUBLIC_IP=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=citibike-kafka-producer" --query 'Reservations[0].Instances[0].PublicIpAddress' --output text)
+          echo "CITIBIKE_KAFKA_PRODUCER_HOST=$PUBLIC_IP" >> $GITHUB_ENV
+          PUBLIC_IP=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=citibike-kafka-consumer" --query 'Reservations[0].Instances[0].PublicIpAddress' --output text)
+          echo "CITIBIKE_KAFKA_CONSUMER_HOST=$PUBLIC_IP" >> $GITHUB_ENV
+      
+      - name: Get Broker EC2 Instance Private IP
+        #if: steps.filter.outputs.kafka_broker == 'true' || steps.filter.outputs.kafka_producer == 'true' || steps.filter.outputs.kafka_consumer == 'true'
+        run: |
+          PRIVATE_IP=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=citibike-kafka-broker" --query 'Reservations[0].Instances[0].PrivateIpAddress' --output text)
+          echo "BROKER_PRIVATE_IP_ADDRESS=$PRIVATE_IP" >> $GITHUB_ENV
+
+      - name: Sync to S3
+        #if: steps.filter.outputs.kafka_broker == 'true' || steps.filter.outputs.kafka_producer == 'true' || steps.filter.outputs.kafka_consumer == 'true'
+        run: |
+          aws s3 sync --delete ./kafka_broker s3://citibike-data-platform-project-bucket/kafka_broker
+          aws s3 sync --delete ./kafka_producer s3://citibike-data-platform-project-bucket/kafka_producer
+          aws s3 cp ./kafka_consumer/compose.yaml s3://citibike-data-platform-project-bucket/kafka_consumer/compose.yaml
 
 
 ### NEW SECTION
@@ -112,29 +135,6 @@ jobs:
 
 
 # ### COMMENTED OUT BELOW HERE
-#       - name: Get EC2 Instance Public IPs
-#         if: steps.filter.outputs.kafka_broker == 'true' || steps.filter.outputs.kafka_producer == 'true' || steps.filter.outputs.kafka_consumer == 'true'
-#         run: |
-#           PUBLIC_IP=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=citibike-kafka-broker" --query 'Reservations[0].Instances[0].PublicIpAddress' --output text)
-#           echo "CITIBIKE_KAFKA_BROKER_HOST=$PUBLIC_IP" >> $GITHUB_ENV
-#           PUBLIC_IP=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=citibike-kafka-producer" --query 'Reservations[0].Instances[0].PublicIpAddress' --output text)
-#           echo "CITIBIKE_KAFKA_PRODUCER_HOST=$PUBLIC_IP" >> $GITHUB_ENV
-#           PUBLIC_IP=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=citibike-kafka-consumer" --query 'Reservations[0].Instances[0].PublicIpAddress' --output text)
-#           echo "CITIBIKE_KAFKA_CONSUMER_HOST=$PUBLIC_IP" >> $GITHUB_ENV
-      
-#       - name: Get Broker EC2 Instance Private IP
-#         if: steps.filter.outputs.kafka_broker == 'true' || steps.filter.outputs.kafka_producer == 'true' || steps.filter.outputs.kafka_consumer == 'true'
-#         run: |
-#           PRIVATE_IP=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=citibike-kafka-broker" --query 'Reservations[0].Instances[0].PrivateIpAddress' --output text)
-#           echo "BROKER_PRIVATE_IP_ADDRESS=$PRIVATE_IP" >> $GITHUB_ENV
-
-#       - name: Sync to S3
-#         if: steps.filter.outputs.kafka_broker == 'true' || steps.filter.outputs.kafka_producer == 'true' || steps.filter.outputs.kafka_consumer == 'true'
-#         run: |
-#           aws s3 sync --delete ./kafka_broker s3://citibike-data-platform-project-bucket/kafka_broker
-#           aws s3 sync --delete ./kafka_producer s3://citibike-data-platform-project-bucket/kafka_producer
-#           aws s3 sync --delete ./kafka_consumer s3://citibike-data-platform-project-bucket/kafka_consumer
-
 #       - name: Deploy Kafka Broker to EC2
 #         if: steps.filter.outputs.kafka_broker == 'true'
 #         env:
