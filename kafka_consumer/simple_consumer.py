@@ -36,8 +36,8 @@ def main():
 
         if len(message_batch) == 1000:
             try:
-                # Unix timestamp as object_key
-                object_key = 'kafka_output/' + str(time.time()).split(".")[0]
+                # Unix timestamp with microseconds as object_key
+                object_key = 'kafka_output/' + str(time.time())
                 
                 # turn each message in the batch into a single row with list comprehension
                 # then, join together with newline characters to place a newline at the end of each row
