@@ -15,7 +15,7 @@ jobs:
         id: filter
         with:
           filters: |
-            producer:
+            kafka_producer:
               - 'kafka_producer/**'
       
       - name: Set up Python
@@ -56,11 +56,11 @@ jobs:
         id: filter
         with:
           filters: |
-            broker:
+            kafka_broker:
               - 'kafka_broker/**'
-            producer:
+            kafka_producer:
               - 'kafka_producer/**'
-            consumer:
+            kafka_consumer:
               - 'kafka_consumer/**'
       
       - name: Configure AWS Credentials
