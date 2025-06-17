@@ -3,6 +3,9 @@
 ---
 ## To Do:
 
+- Configure workflow to only run when changes have been made in certain directories
+- [] Do this before your next push to main
+
 Update to use ECR:
 - [] Deploy Docker container to ECR
 - [] Run Docker Compose from container in ECR
