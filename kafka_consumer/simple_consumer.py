@@ -48,7 +48,7 @@ def main():
                 s3.put_object(
                     Bucket=bucket_name, Key=object_key, Body=object_body
                 )
-                logger.info("Saved batch of 1000 records from Kafka.")
+                logger.info("Saved batch of records from Kafka.")
 
                 # clear out message_batch
                 message_batch = []
