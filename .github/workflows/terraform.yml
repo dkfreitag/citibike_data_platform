@@ -62,7 +62,11 @@ jobs:
     outputs:
       run_terraform: ${{ steps.filter.outputs.run_terraform }}
     steps:
-    # For pull requests it's not necessary to checkout the code
+    # Checkout the repository to the GitHub Actions runner
+    # For pull requests it's not necessary to checkout the code, but we are doing push to main as our trigger above
+    - name: Checkout
+      uses: actions/checkout@v4
+
     - uses: dorny/paths-filter@v3
       id: filter
       with:
