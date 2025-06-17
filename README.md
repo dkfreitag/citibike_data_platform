@@ -3,12 +3,8 @@
 ---
 ## To Do:
 
-Update to use ECR:
-- [ ] Deploy Docker container to ECR
-- [ ] Run Docker Compose from container in ECR
-- [ ] Update Producer and Consumer to use ECR
-
 Save records to S3:
+- [ ] Update the Python producer to write to S3 for a test
 - [ ] Use Spark to read from Kafka and write to S3
 
 ```
