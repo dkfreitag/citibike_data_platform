@@ -32,7 +32,7 @@ resource "aws_instance" "citibike_kafka_broker" {
   vpc_security_group_ids      = ["sg-555a955a"]
   key_name                    = "key-pair-20250320"
   private_ip                  = "172.31.41.225"
-  associate_public_ip_address = true
+#  associate_public_ip_address = true
   availability_zone           = "us-east-1b"
   
   root_block_device {
