@@ -64,9 +64,11 @@ jobs:
       run_terraform: ${{ steps.filter.outputs.run_terraform }}
     steps:
     # For pull requests it's not necessary to checkout the code
+    - uses: actions/checkout@v4
     - uses: dorny/paths-filter@v3
       id: filter
       with:
+        base: 'main'
         filters: |
           run_terraform:
             - 'main.tf'
