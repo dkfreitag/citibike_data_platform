@@ -129,14 +129,14 @@ jobs:
           script: |
             sudo snap install aws-cli --classic
             sudo snap install docker
-            sudo aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
-            sudo aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-            sudo aws configure set default.region us-east-1
-            sudo rm -rf kafka_broker
-            sudo mkdir kafka_broker
-            sudo cd kafka_broker
-            sudo aws s3 cp s3://citibike-data-platform-project-bucket/kafka_broker/compose.yaml .
-            sudo echo "BROKER_PRIVATE_IP_ADDRESS=${{ env.BROKER_PRIVATE_IP_ADDRESS }}" > .env
+            aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
+            aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+            aws configure set default.region us-east-1
+            rm -rf kafka_broker
+            mkdir kafka_broker
+            cd kafka_broker
+            aws s3 cp s3://citibike-data-platform-project-bucket/kafka_broker/compose.yaml .
+            echo "BROKER_PRIVATE_IP_ADDRESS=${{ env.BROKER_PRIVATE_IP_ADDRESS }}" > .env
             sudo docker compose down
 
       - name: Deploy Kafka Producer to EC2
@@ -150,16 +150,16 @@ jobs:
           script: |
             sudo snap install aws-cli --classic
             sudo snap install docker
-            sudo aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
-            sudo aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-            sudo aws configure set default.region us-east-1
-            sudo rm -rf kafka_producer
-            sudo mkdir kafka_producer
-            sudo cd kafka_producer
-            sudo aws s3 cp s3://citibike-data-platform-project-bucket/kafka_producer/compose.yaml .
-            sudo echo "BROKER_PRIVATE_IP_ADDRESS=${{ env.BROKER_PRIVATE_IP_ADDRESS }}" > .env
+            aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
+            aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+            aws configure set default.region us-east-1
+            rm -rf kafka_producer
+            mkdir kafka_producer
+            cd kafka_producer
+            aws s3 cp s3://citibike-data-platform-project-bucket/kafka_producer/compose.yaml .
+            echo "BROKER_PRIVATE_IP_ADDRESS=${{ env.BROKER_PRIVATE_IP_ADDRESS }}" > .env
             sudo docker compose down
-            sudo aws ecr get-login-password | docker login -u AWS --password-stdin "https://$(aws sts get-caller-identity --query 'Account' --output text).dkr.ecr.us-east-1.amazonaws.com"
+            aws ecr get-login-password | docker login -u AWS --password-stdin "https://$(aws sts get-caller-identity --query 'Account' --output text).dkr.ecr.us-east-1.amazonaws.com"
             sudo docker pull ${{ steps.login-ecr.outputs.registry }}/citibike-project/kafka-producer-img:latest
 
       - name: Deploy Kafka Consumer to EC2
@@ -173,16 +173,16 @@ jobs:
           script: |
             sudo snap install aws-cli --classic
             sudo snap install docker
-            sudo aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
-            sudo aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-            sudo aws configure set default.region us-east-1
-            sudo rm -rf kafka_consumer
-            sudo mkdir kafka_consumer
-            sudo cd kafka_consumer
-            sudo aws s3 cp s3://citibike-data-platform-project-bucket/kafka_consumer/compose.yaml .
-            sudo echo "BROKER_PRIVATE_IP_ADDRESS=${{ env.BROKER_PRIVATE_IP_ADDRESS }}" > .env
+            aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
+            aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+            aws configure set default.region us-east-1
+            rm -rf kafka_consumer
+            mkdir kafka_consumer
+            cd kafka_consumer
+            aws s3 cp s3://citibike-data-platform-project-bucket/kafka_consumer/compose.yaml .
+            echo "BROKER_PRIVATE_IP_ADDRESS=${{ env.BROKER_PRIVATE_IP_ADDRESS }}" > .env
             sudo docker compose down
-            sudo aws ecr get-login-password | docker login -u AWS --password-stdin "https://$(aws sts get-caller-identity --query 'Account' --output text).dkr.ecr.us-east-1.amazonaws.com"
+            aws ecr get-login-password | docker login -u AWS --password-stdin "https://$(aws sts get-caller-identity --query 'Account' --output text).dkr.ecr.us-east-1.amazonaws.com"
             sudo docker pull ${{ steps.login-ecr.outputs.registry }}/citibike-project/kafka-consumer-img:latest
   
 
