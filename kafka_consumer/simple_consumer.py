@@ -34,7 +34,9 @@ def main():
     for message in consumer:
         message_batch.append(message.value)
 
-        if len(message_batch) == 1000:
+        # there are 2234 Citibike stations
+        # this is one minute of data
+        if len(message_batch) == 2234:
             try:
                 # Unix timestamp with microseconds as object_key
                 object_key = 'kafka_output/' + str(time.time())
