@@ -1,15 +1,54 @@
 import os
+import time
+import logging
 
+import boto3
 from kafka import KafkaConsumer
 from dotenv import load_dotenv
 
+# Configure the logging system
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
+
+# Create a logger
+logger = logging.getLogger(__name__)
+
 load_dotenv()
 
+
 def main():
-    consumer = KafkaConsumer('station-status', bootstrap_servers=f'{os.getenv('BROKER_PRIVATE_IP_ADDRESS')}:9092')
+    # reate an S3 client
+    s3 = boto3.client("s3")
+    bucket_name = "citibike-data-platform-project-bucket"
 
+    # create Kafka consumer
+    consumer = KafkaConsumer(
+        "station-status",
+        bootstrap_servers=f"{os.getenv('BROKER_PRIVATE_IP_ADDRESS')}:9092",
+        value_deserializer=lambda x: json.loads(x.decode("utf-8"))
+    )
+
+    message_batch = []
     for message in consumer:
-        print(message.value)
+        message_batch.append(message.value)
 
-if __name__ == '__main__':
+        if len(message_batch) == 1000:
+            try:
+                # Unix timestamp as object_key
+                object_key = str(time.time()).split(".")[0]
+
+                s3.put_object(
+                    Bucket=bucket_name, Key=object_key, Body=str(message_batch)
+                )
+                logger.info("Saved batch of records from Kafka.")
+
+                # clear out message_batch
+                message_batch = []
+
+            except Exception as e:
+                logger.error(f"Error uploading records! Exception: {e}")
+
+
+if __name__ == "__main__":
     main()
