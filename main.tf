@@ -23,52 +23,49 @@ provider "aws" {
   secret_key = var.aws_secret_key
 }
 
-
 # Broker EC2 Instance
 resource "aws_instance" "citibike_kafka_broker" {
   ami                         = "ami-020cba7c55df1f615"
-  instance_type               = "t2.large"
-  subnet_id                   = "subnet-21f4937e"
+  instance_type               = "t3.large"
+  subnet_id                   = "subnet-0688a24b"
   vpc_security_group_ids      = ["sg-555a955a"]
   key_name                    = "key-pair-20250320"
-  private_ip                  = "172.31.41.225"
-  availability_zone           = "us-east-1b"
+  private_ip                  = "172.31.17.80"
+  availability_zone           = "us-east-1a"
   
   root_block_device {
-    volume_type           = "gp2"  # General Purpose SSD
+    volume_type           = "gp3"
+    volume_size           = 8
+    iops                  = 3000
     delete_on_termination = true
+    encrypted             = false
   }
-  
-  metadata_options {
-    http_endpoint               = "enabled"
-    http_tokens                 = "required"  # IMDSv2
-    http_put_response_hop_limit = 2
-    instance_metadata_tags      = "disabled"
-  }
-  
-  source_dest_check = true
-  monitoring        = false
-  ebs_optimized     = false
   
   credit_specification {
-    cpu_credits = "standard"
+    cpu_credits = "unlimited"
   }
+  
+  ebs_optimized        = true
+  monitoring           = false
+  source_dest_check    = true
+  
+  disable_api_termination              = false
+  instance_initiated_shutdown_behavior = "stop"
   
   tags = {
     Name = "citibike-kafka-broker"
   }
 }
 
-
 # Producer EC2 Instance
 resource "aws_instance" "citibike_kafka_producer" {
   ami                         = "ami-020cba7c55df1f615"
-  instance_type               = "t2.micro"
-  subnet_id                   = "subnet-af0a6a8e"
+  instance_type               = "t3.micro"
+  subnet_id                   = "subnet-0688a24b"
   vpc_security_group_ids      = ["sg-555a955a"]
   key_name                    = "key-pair-20250320"
-  private_ip                  = "172.31.89.25"
-  availability_zone           = "us-east-1d"
+  private_ip                  = "172.31.20.18"
+  availability_zone           = "us-east-1a"
   
   root_block_device {
     volume_type           = "gp3"
@@ -78,37 +75,31 @@ resource "aws_instance" "citibike_kafka_producer" {
     encrypted             = false
   }
   
-  metadata_options {
-    http_endpoint               = "enabled"
-    http_tokens                 = "required"  # IMDSv2 is typically the default now
-    http_put_response_hop_limit = 1           # Default value
+  credit_specification {
+    cpu_credits = "unlimited"
   }
   
-  source_dest_check                    = true
-  monitoring                           = false
-  ebs_optimized                        = false
+  ebs_optimized        = true
+  monitoring           = false
+  source_dest_check    = true
+  
   disable_api_termination              = false
   instance_initiated_shutdown_behavior = "stop"
-  
-  credit_specification {
-    cpu_credits = "standard"
-  }
   
   tags = {
     Name = "citibike-kafka-producer"
   }
 }
 
-
 # Consumer EC2 Instance
 resource "aws_instance" "citibike_kafka_consumer" {
   ami                         = "ami-020cba7c55df1f615"
-  instance_type               = "t2.micro"
-  subnet_id                   = "subnet-af0a6a8e"
+  instance_type               = "t3.micro"
+  subnet_id                   = "subnet-0688a24b"
   vpc_security_group_ids      = ["sg-555a955a"]
   key_name                    = "key-pair-20250320"
-  private_ip                  = "172.31.89.26"
-  availability_zone           = "us-east-1d"
+  private_ip                  = "172.31.20.29"
+  availability_zone           = "us-east-1a"
   
   root_block_device {
     volume_type           = "gp3"
@@ -118,21 +109,16 @@ resource "aws_instance" "citibike_kafka_consumer" {
     encrypted             = false
   }
   
-  metadata_options {
-    http_endpoint               = "enabled"
-    http_tokens                 = "required"  # IMDSv2 is typically the default now
-    http_put_response_hop_limit = 1           # Default value
+  credit_specification {
+    cpu_credits = "unlimited"
   }
   
-  source_dest_check                    = true
-  monitoring                           = false
-  ebs_optimized                        = false
+  ebs_optimized        = true
+  monitoring           = false
+  source_dest_check    = true
+  
   disable_api_termination              = false
   instance_initiated_shutdown_behavior = "stop"
-  
-  credit_specification {
-    cpu_credits = "standard"
-  }
   
   tags = {
     Name = "citibike-kafka-consumer"
