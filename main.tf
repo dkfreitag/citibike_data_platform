@@ -31,7 +31,6 @@ resource "aws_instance" "citibike_kafka_broker" {
   vpc_security_group_ids      = ["sg-555a955a"]
   key_name                    = "key-pair-20250320"
   private_ip                  = "172.31.17.80"
-  associate_public_ip_address = true
   availability_zone           = "us-east-1a"
   
   root_block_device {
@@ -66,7 +65,6 @@ resource "aws_instance" "citibike_kafka_producer" {
   vpc_security_group_ids      = ["sg-555a955a"]
   key_name                    = "key-pair-20250320"
   private_ip                  = "172.31.20.18"
-  associate_public_ip_address = true
   availability_zone           = "us-east-1a"
   
   root_block_device {
@@ -101,7 +99,6 @@ resource "aws_instance" "citibike_kafka_consumer" {
   vpc_security_group_ids      = ["sg-555a955a"]
   key_name                    = "key-pair-20250320"
   private_ip                  = "172.31.20.29"
-  associate_public_ip_address = true
   availability_zone           = "us-east-1a"
   
   root_block_device {
