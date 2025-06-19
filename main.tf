@@ -46,9 +46,6 @@ resource "aws_instance" "citibike_kafka_broker" {
     cpu_credits = "unlimited"
   }
   
-  cpu_core_count       = 1
-  cpu_threads_per_core = 2
-  
   ebs_optimized        = true
   monitoring           = false
   source_dest_check    = true
@@ -84,9 +81,6 @@ resource "aws_instance" "citibike_kafka_producer" {
     cpu_credits = "unlimited"
   }
   
-  cpu_core_count       = 1
-  cpu_threads_per_core = 2
-  
   ebs_optimized        = true
   monitoring           = false
   source_dest_check    = true
@@ -121,9 +115,6 @@ resource "aws_instance" "citibike_kafka_consumer" {
   credit_specification {
     cpu_credits = "unlimited"
   }
-  
-  cpu_core_count       = 1
-  cpu_threads_per_core = 2
   
   ebs_optimized        = true
   monitoring           = false
