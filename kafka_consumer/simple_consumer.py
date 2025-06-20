@@ -32,22 +32,32 @@ def main():
 
     message_batch = []
     for message in consumer:
-        message_batch.append(message)
+        message_batch.append(
+            {
+                "topic": message.topic,
+                "partition": message.partition,
+                "offset": message.offset,
+                "key": message.key,
+                "value": message.value,
+                "timestamp": message.timestamp,
+                "header": message.header,
+            }
+        )
 
         # there are 2234 Citibike stations
         # this is one minute of data
         if len(message_batch) == 2234:
             try:
                 # Unix timestamp with microseconds as object_key
-                object_key = 'kafka_output/' + str(time.time())
-                
+                object_key = "kafka_output/" + str(time.time())
+
                 # turn each message in the batch into a single row with list comprehension
                 # then, join together with newline characters to place a newline at the end of each row
-                object_body = "\n".join([json.dumps(msg_obj) for msg_obj in message_batch])
-
-                s3.put_object(
-                    Bucket=bucket_name, Key=object_key, Body=object_body
+                object_body = "\n".join(
+                    [json.dumps(msg_obj) for msg_obj in message_batch]
                 )
+
+                s3.put_object(Bucket=bucket_name, Key=object_key, Body=object_body)
                 logger.info("Saved batch of records from Kafka.")
 
                 # clear out message_batch
