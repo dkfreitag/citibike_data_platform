@@ -32,18 +32,11 @@ def main():
 
     message_batch = []
     for message in consumer:
-        message_batch.append(
-            {
-                "topic": message.topic,
-                "partition": message.partition,
-                "offset": message.offset,
-                "key": message.key,
-                "value": message.value,
-                "timestamp": message.timestamp,
-                "headers": message.headers,
-            }
-        )
+        msg_to_push = message.value
+        msg_to_push['kafka_timestamp'] = message.timestamp
 
+        message_batch.append(msg_to_push)
+        
         # there are 2234 Citibike stations
         # this is one minute of data
         if len(message_batch) == 2234:
