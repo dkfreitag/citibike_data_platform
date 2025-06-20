@@ -40,7 +40,7 @@ def main():
                 "key": message.key,
                 "value": message.value,
                 "timestamp": message.timestamp,
-                "header": message.header,
+                "headers": message.headers,
             }
         )
 
