@@ -30,16 +30,17 @@ def main():
         value_deserializer=lambda x: json.loads(x.decode("utf-8")),
     )
 
+    last_put_time = time.time()     # start the clock
+    interval = 60                   # seconds
+
     message_batch = []
     for message in consumer:
         msg_to_push = message.value
         msg_to_push['kafka_timestamp'] = message.timestamp
-
         message_batch.append(msg_to_push)
-        
-        # there are 2234 Citibike stations
-        # this is one minute of data
-        if len(message_batch) == 2234:
+
+        # after the interval has elapsed, push the messages
+        if time.time() - last_put_time >= interval:
             try:
                 # Unix timestamp with microseconds as object_key
                 object_key = "kafka_output/" + str(time.time())
@@ -55,10 +56,14 @@ def main():
 
                 # clear out message_batch
                 message_batch = []
+                last_put_time = time.time()
 
             except Exception as e:
                 logger.error(f"Error uploading records! Exception: {e}")
 
 
 if __name__ == "__main__":
-    main()
+    # wrap main() in a while True
+    # if the Producer stops or the broker dies, just keep looking for messages
+    while True:
+        main()
