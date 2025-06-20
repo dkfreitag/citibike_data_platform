@@ -32,7 +32,7 @@ def main():
 
     message_batch = []
     for message in consumer:
-        message_batch.append(message.value)
+        message_batch.append(message)
 
         # there are 2234 Citibike stations
         # this is one minute of data
