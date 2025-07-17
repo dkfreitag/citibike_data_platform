@@ -1,5 +1,5 @@
 import unittest
-import main
+import ec2_producer
 
 
 class TestProducerMethods(unittest.TestCase):
@@ -148,9 +148,10 @@ class TestProducerMethods(unittest.TestCase):
         ]
 
         self.assertEqual(
-            main.process_station_status(station_status_object),
+            ec2_producer.process_station_status(station_status_object),
             station_status_records,
         )
+
 
 if __name__ == "__main__":
     unittest.main()
