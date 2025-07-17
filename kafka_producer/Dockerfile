@@ -1,4 +1,4 @@
-FROM python:3.13-bookworm-slim
+FROM python:3.13-slim
 
 # Install the project into `/app`
 WORKDIR /app
