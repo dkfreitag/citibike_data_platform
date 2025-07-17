@@ -3,7 +3,7 @@ services:
     # Build the image from the Dockerfile in the current directory
     build: .
 
-    # Host the FastAPI application on port 8000
+    # Open port 9092 - this will communicate with the Kafka broker
     ports:
       - "9092:9092"
 
