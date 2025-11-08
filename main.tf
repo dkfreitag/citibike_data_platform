@@ -124,3 +124,5 @@ resource "aws_instance" "citibike_kafka_consumer" {
     Name = "citibike-kafka-consumer"
   }
 }
+
+# add a comment to trigger terraform rerun
