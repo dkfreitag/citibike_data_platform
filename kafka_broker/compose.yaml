@@ -18,3 +18,5 @@ services:
       KAFKA_NUM_PARTITIONS: 1
     ports:
       - 9092:9092
+
+# add comment

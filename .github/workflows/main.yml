@@ -16,35 +16,37 @@ jobs:
             kafka_producer:
               - 'kafka_producer/**'
       
+      - name: Install uv
+        if: steps.filter.outputs.kafka_producer == 'true'
+        uses: astral-sh/setup-uv@v6
+        with:
+          # Install a specific version of uv.
+          version: "0.7.22"
+      
       - name: Set up Python
-        # if : steps.filter.outputs.kafka_producer == 'true'
-        # This is the version of the action for setting up Python, not the Python version.
+        if: steps.filter.outputs.kafka_producer == 'true'
         uses: actions/setup-python@v5
         with:
-          # Semantic version range syntax or exact version of a Python version
-          python-version: '3.12'
-          # Optional - x64 or x86 architecture, defaults to x64
-          architecture: 'x64'
+          python-version-file: "kafka_producer/pyproject.toml"
           
       # You can test your matrix by printing the current Python version
       - name: Display Python Version
-        # if : steps.filter.outputs.kafka_producer == 'true'
+        if: steps.filter.outputs.kafka_producer == 'true'
         run: python -c "import sys; print(sys.version)"
-        
-      - name: Install Dependencies
-        # if : steps.filter.outputs.kafka_producer == 'true'
+      
+      - name: Install the project
+        if: steps.filter.outputs.kafka_producer == 'true'
         run: |
           cd kafka_producer
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-        
-      - name: Kafka Producer Tests
-        # if : steps.filter.outputs.kafka_producer == 'true'
-        run: |
-          cd kafka_producer
-          pip install pytest
-          pytest tests.py
+          uv sync --locked --all-extras --dev
 
+      - name: Run tests
+        if: steps.filter.outputs.kafka_producer == 'true'
+        # For example, using `pytest`
+        run: |
+          cd kafka_producer
+          uv run pytest tests
+  
   deploy:
     needs: [tests]
     runs-on: ubuntu-latest
@@ -62,7 +64,7 @@ jobs:
               - 'kafka_consumer/**'
       
       - name: Configure AWS Credentials
-        # if : steps.filter.outputs.kafka_broker == 'true' || steps.filter.outputs.kafka_producer == 'true' || steps.filter.outputs.kafka_consumer == 'true'
+        if: steps.filter.outputs.kafka_broker == 'true' || steps.filter.outputs.kafka_producer == 'true' || steps.filter.outputs.kafka_consumer == 'true'
         uses: aws-actions/configure-aws-credentials@v4.1.0
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -70,14 +72,14 @@ jobs:
           aws-region: 'us-east-1'
 
       - name: Sync to S3
-        # if : steps.filter.outputs.kafka_broker == 'true' || steps.filter.outputs.kafka_producer == 'true' || steps.filter.outputs.kafka_consumer == 'true'
+        if: steps.filter.outputs.kafka_broker == 'true' || steps.filter.outputs.kafka_producer == 'true' || steps.filter.outputs.kafka_consumer == 'true'
         run: |
           aws s3 sync --delete ./kafka_broker s3://citibike-data-platform-project-bucket/kafka_broker
           aws s3 sync --delete ./kafka_producer s3://citibike-data-platform-project-bucket/kafka_producer
           aws s3 sync --delete ./kafka_consumer s3://citibike-data-platform-project-bucket/kafka_consumer
       
       - name: Get EC2 Instance Public IPs
-        # if : steps.filter.outputs.kafka_broker == 'true' || steps.filter.outputs.kafka_producer == 'true' || steps.filter.outputs.kafka_consumer == 'true'
+        if: steps.filter.outputs.kafka_broker == 'true' || steps.filter.outputs.kafka_producer == 'true' || steps.filter.outputs.kafka_consumer == 'true'
         run: |
           PUBLIC_IP=$(aws ec2 describe-instances --filters Name=tag:Name,Values=citibike-kafka-broker Name=instance-state-name,Values=running --query 'Reservations[0].Instances[0].PublicIpAddress' --output text)
           echo "CITIBIKE_KAFKA_BROKER_HOST=$PUBLIC_IP" >> $GITHUB_ENV
@@ -87,13 +89,13 @@ jobs:
           echo "CITIBIKE_KAFKA_CONSUMER_HOST=$PUBLIC_IP" >> $GITHUB_ENV
       
       - name: Get Broker EC2 Instance Private IP
-        # if : steps.filter.outputs.kafka_broker == 'true' || steps.filter.outputs.kafka_producer == 'true' || steps.filter.outputs.kafka_consumer == 'true'
+        if: steps.filter.outputs.kafka_broker == 'true' || steps.filter.outputs.kafka_producer == 'true' || steps.filter.outputs.kafka_consumer == 'true'
         run: |
           PRIVATE_IP=$(aws ec2 describe-instances --filters Name=tag:Name,Values=citibike-kafka-broker Name=instance-state-name,Values=running --query 'Reservations[0].Instances[0].PrivateIpAddress' --output text)
           echo "BROKER_PRIVATE_IP_ADDRESS=$PRIVATE_IP" >> $GITHUB_ENV
 
       - name: Deploy Kafka Broker to EC2
-        # if : steps.filter.outputs.kafka_broker == 'true'
+        if: steps.filter.outputs.kafka_broker == 'true'
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ env.CITIBIKE_KAFKA_BROKER_HOST }}
@@ -115,7 +117,7 @@ jobs:
           # sudo docker compose up -d --force-recreate
 
       - name: Deploy Kafka Producer to EC2
-        # if : steps.filter.outputs.kafka_producer == 'true'
+        if: steps.filter.outputs.kafka_producer == 'true'
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ env.CITIBIKE_KAFKA_PRODUCER_HOST }}
@@ -138,7 +140,7 @@ jobs:
           # sudo docker compose up -d --force-recreate
 
       - name: Deploy Kafka Consumer to EC2
-        # if : steps.filter.outputs.kafka_consumer == 'true'
+        if: steps.filter.outputs.kafka_consumer == 'true'
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ env.CITIBIKE_KAFKA_CONSUMER_HOST }}
@@ -155,7 +157,10 @@ jobs:
             mkdir kafka_consumer
             cd kafka_consumer
             aws s3 sync --delete s3://citibike-data-platform-project-bucket/kafka_consumer .
-            echo "BROKER_PRIVATE_IP_ADDRESS=${{ env.BROKER_PRIVATE_IP_ADDRESS }}" > .env
+            echo "BROKER_PRIVATE_IP_ADDRESS=${{ env.BROKER_PRIVATE_IP_ADDRESS }}" >> .env
+            echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}" >> .env
+            echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> .env
+            echo "AWS_DEFAULT_REGION=us-east-1" >> .env
             sudo docker compose down
             sudo docker compose build
           # sudo docker compose up -d --force-recreate
