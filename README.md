@@ -1,8 +1,8 @@
-# Citibike Data Platform
+# Citi Bike Data Platform
 
 ## High Level Summary:
 
-A complete end-to-end data pipeline to fetch data from various Citibike hosted API endpoints, do both streaming and batch data processing, and make the data available in a serving layer for both analytics and data visualization.
+A complete end-to-end data pipeline to fetch data from various Citi Bike hosted API endpoints, do both streaming and batch data processing, and make the data available in a serving layer for both analytics and data visualization.
 
 This project is also a place for me to experiment with a variety of Data Engineering technologies. In particular, this project includes:
 - Various AWS infrastructure:
@@ -23,10 +23,10 @@ This project is also a place for me to experiment with a variety of Data Enginee
 ### Architecture Diagram:
 ```mermaid
 ---
-title: Citibike Data Platform - Lambda Architecture
+title: Citi Bike Data Platform - Lambda Architecture
 ---
 flowchart-elk LR
-    A@{ shape: in-out, label: "CitiBike Station Status API" }
+    A@{ shape: in-out, label: "Citi Bike Station Status API" }
     B@{ shape: rect, label: "Kafka Producer"}
     C@{ shape: rect, label: "Kafka Broker"}
     D@{ shape: rect, label: "Kafka Consumer"}
@@ -35,7 +35,7 @@ flowchart-elk LR
     G@{ shape: rect, label: "Stream analytics
     (coming soon)"}
     H@{ shape: rect, label: "Spark"}
-    I@{ shape: in-out, label: "Citibike Station Info API"}
+    I@{ shape: in-out, label: "Citi Bike Station Info API"}
     J@{ shape: rect, label: "Lambda Function"}
     K@{ shape: cyl, label: "Raw JSON in S3"}
     L@{ shape: cyl, label: "Parquet in S3"}
